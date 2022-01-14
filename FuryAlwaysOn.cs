@@ -1,10 +1,12 @@
 ﻿using Modding;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 using UObject = UnityEngine.Object;
+using System.Collections.Generic;
+using Satchel.BetterMenus;
 
 namespace FuryAlwaysOn
 {
-	public class FuryAlwaysOn : Mod, ITogglableMod
+	public class FuryAlwaysOn : Mod, ICustomMenuMod, ITogglableMod
 	{
 		public static FuryAlwaysOn Instance;
 
@@ -23,6 +25,9 @@ namespace FuryAlwaysOn
 			ModHooks.NewGameHook           += AddComponent;
 		}
 
+		public bool ToggleButtonInsideMenu => true;
+		public Menu MenuRef;
+
 		private void AfterSaveGameLoad(SaveGameData data) => AddComponent();
 
 		private void AddComponent()
@@ -39,6 +44,34 @@ namespace FuryAlwaysOn
 			if (x == null)
 				return;
 			UObject.Destroy(x);
+		}
+
+		public Menu PrepareMenu(ModToggleDelegates toggleDelegates)
+		{
+			return new Menu("FuryAlwaysOn Settings", new Element[]
+			{
+				toggleDelegates.CreateToggle("Mod Toggle", "Turn this setting off to disable the mod entirely"),
+				new MenuRow(
+					new List<Element>
+					{
+						Blueprints.NavigateToMenu(
+							"Visual Effects",
+							"Toggle Fury of the Fallen's visual effects",
+							() => Settings.GetMenu(MenuRef.menuScreen)
+						)
+					},
+					Id: "group1"
+				) { XDelta = 500f }
+			});
+		}
+
+		public MenuScreen GetMenuScreen(MenuScreen modListMenu, ModToggleDelegates? toggleDelegates)
+		{
+			if (MenuRef == null)
+			{
+				MenuRef = PrepareMenu((ModToggleDelegates)toggleDelegates);
+			}
+			return MenuRef.GetMenuScreen(modListMenu);
 		}
 	}
 }
